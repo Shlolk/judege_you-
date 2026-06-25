@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from pathlib import Path
 
-from ...modules.report_generator import ReportGenerator, ReportType, ReportFormat
+from modules.report_generator import ReportGenerator, ReportType, ReportFormat
 
 router = APIRouter()
 

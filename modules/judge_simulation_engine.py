@@ -5,8 +5,8 @@ from enum import Enum
 import asyncio
 import random
 
-from ..models.project import Project
-from ..ai.models.ollama_client import OllamaClient
+from core.models.project import Project
+from ai.models.ollama_client import OllamaClient
 
 class JudgePersona(str, Enum):
     """Different judge personas for simulation"""

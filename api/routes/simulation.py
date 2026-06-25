@@ -4,9 +4,9 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from ...modules.judge_simulation_engine import JudgeSimulationEngine, JudgePersona, AttackMode
-from ...modules.interview_simulation_engine import InterviewSimulationEngine, InterviewType, InterviewDifficulty
-from ...models.project import Project
+from modules.judge_simulation_engine import JudgeSimulationEngine, JudgePersona, AttackMode
+from modules.interview_simulation_engine import InterviewSimulationEngine, InterviewType, InterviewDifficulty
+from models.project import Project
 
 router = APIRouter()
 

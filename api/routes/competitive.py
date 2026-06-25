@@ -4,7 +4,7 @@ from typing import Optional
 from fastapi import APIRouter
 from pydantic import BaseModel
 
-from ...modules.competitor_analysis_engine import CompetitorAnalysisEngine, MarketSegment
+from modules.competitor_analysis_engine import CompetitorAnalysisEngine, MarketSegment
 
 router = APIRouter()
 

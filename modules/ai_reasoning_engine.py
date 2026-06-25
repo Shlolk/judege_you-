@@ -5,8 +5,8 @@ from enum import Enum
 import json
 import re
 
-from ..ai.models.ollama_client import OllamaClient
-from ..models.project import Project
+from ai.models.ollama_client import OllamaClient
+from core.models.project import Project
 
 class ReasoningStrategy(str, Enum):
     CHAIN_OF_THOUGHT = "chain_of_thought"

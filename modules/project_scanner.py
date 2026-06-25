@@ -6,7 +6,14 @@ import os
 import json
 import hashlib
 import subprocess
-from git import Repo, InvalidGitRepositoryError
+
+try:
+    from git import Repo, InvalidGitRepositoryError
+    HAS_GITPYTHON = True
+except ImportError:
+    HAS_GITPYTHON = False
+    Repo = None
+    InvalidGitRepositoryError = Exception
 
 @dataclass
 class FileInfo:
@@ -271,44 +278,32 @@ class ProjectScanner:
         )
     
     def _get_git_info(self, project_path: Path) -> GitInfo:
-        """Get git repository information"""
-        
+        if not HAS_GITPYTHON:
+            return GitInfo(has_git=False)
         try:
             repo = Repo(str(project_path))
-            
             if repo.bare:
                 return GitInfo(has_git=True)
-            
-            # Get branch info
             branch = None
             try:
                 branch = repo.active_branch.name
             except:
                 branch = "detached"
-            
-            # Get remote URL
             remote_url = None
             try:
                 if repo.remotes:
                     remote_url = repo.remotes[0].url
             except:
                 pass
-            
-            # Get last commit info
             last_commit_date = None
             last_commit_message = None
             commit_count = None
             contributors = None
-            
             try:
                 last_commit = repo.head.commit
                 last_commit_date = datetime.fromtimestamp(last_commit.committed_date)
                 last_commit_message = last_commit.message.strip()
-                
-                # Count commits
                 commit_count = sum(1 for _ in repo.iter_commits())
-                
-                # Get contributors
                 contributors_set = set()
                 for commit in repo.iter_commits(max_count=100):
                     if commit.author:
@@ -316,17 +311,9 @@ class ProjectScanner:
                 contributors = list(contributors_set)[:20]
             except:
                 pass
-            
-            return GitInfo(
-                has_git=True,
-                branch=branch,
-                remote_url=remote_url,
-                last_commit_date=last_commit_date,
-                last_commit_message=last_commit_message,
-                commit_count=commit_count,
-                contributors=contributors,
-            )
-            
+            return GitInfo(has_git=True, branch=branch, remote_url=remote_url,
+                           last_commit_date=last_commit_date, last_commit_message=last_commit_message,
+                           commit_count=commit_count, contributors=contributors)
         except InvalidGitRepositoryError:
             return GitInfo(has_git=False)
         except Exception:

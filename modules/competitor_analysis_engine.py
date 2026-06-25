@@ -4,8 +4,8 @@ from datetime import datetime
 from enum import Enum
 import re
 
-from ..models.project import Project
-from ..ai.models.ollama_client import OllamaClient
+from core.models.project import Project
+from ai.models.ollama_client import OllamaClient
 
 class MarketSegment(str, Enum):
     STUDENT = "student"

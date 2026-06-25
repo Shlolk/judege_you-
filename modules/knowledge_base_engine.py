@@ -5,9 +5,9 @@ from enum import Enum
 import json
 from pathlib import Path
 
-from ..models.project import Project
-from ..ai.models.ollama_client import OllamaClient
-from ..ai.embeddings import EmbeddingService
+from core.models.project import Project
+from ai.models.ollama_client import OllamaClient
+from ai.embeddings import EmbeddingService
 
 class EntryType(str, Enum):
     PATTERN = "pattern"

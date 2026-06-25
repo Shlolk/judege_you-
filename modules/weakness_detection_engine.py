@@ -5,10 +5,10 @@ from enum import Enum
 import re
 from collections import Counter
 
-from ..models.project import Project
-from ..ai.models.ollama_client import OllamaClient
-from ..parsers.code_parser import CodeParser
-from ..parsers.document_parser import DocumentParser
+from core.models.project import Project
+from ai.models.ollama_client import OllamaClient
+from parsers.code_parser import CodeParser
+from parsers.document_parser import DocumentParser
 
 class WeaknessCategory(str, Enum):
     ARCHITECTURE = "architecture"

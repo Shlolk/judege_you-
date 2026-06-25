@@ -4,12 +4,12 @@ from typing import List, Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from ...modules.architecture_auditor import ArchitectureAuditor
-from ...modules.hackathon_readiness_engine import HackathonReadinessEngine
-from ...modules.weakness_detection_engine import WeaknessDetectionEngine
-from ...modules.judge_simulation_engine import JudgeSimulationEngine
-from ...modules.ai_reasoning_engine import AIReasoningEngine
-from ...models.project import Project
+from modules.architecture_auditor import ArchitectureAuditor
+from modules.hackathon_readiness_engine import HackathonReadinessEngine
+from modules.weakness_detection_engine import WeaknessDetectionEngine
+from modules.judge_simulation_engine import JudgeSimulationEngine
+from modules.ai_reasoning_engine import AIReasoningEngine
+from models.project import Project
 
 router = APIRouter()
 

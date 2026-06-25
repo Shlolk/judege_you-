@@ -4,7 +4,7 @@ from typing import List, Optional
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 
-from ...modules.project_scanner import ProjectScanner, ProjectScanResult
+from modules.project_scanner import ProjectScanner, ProjectScanResult
 
 router = APIRouter()
 scanner = ProjectScanner()
