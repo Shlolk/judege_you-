@@ -69,12 +69,12 @@ class InterviewSimulationEngine:
     def _initialize_question_templates(self) -> Dict[str, List[str]]:
         """Initialize interview question templates by category"""
         return {
-            "data_structures": [
-                "Implement a thread-safe LRU cache with TTL support",
-                "Design a distributed key-value store with strong consistency",
-                "How would you implement an autocomplete system?",
+            "technical": [  # Generic technical questions (default fallback)
+                "Explain the architecture of your project and key design decisions",
+                "How do you handle errors and edge cases in your system?",
+                "What testing strategy does your project use?",
             ],
-            "algorithms": [
+            "data_structures": [
                 "Design an algorithm to detect plagiarism in source code",
                 "Implement a system to find the shortest path in a dynamic graph",
                 "How would you design a recommendation engine?",

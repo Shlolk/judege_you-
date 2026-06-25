@@ -73,6 +73,9 @@ class Container:
         from modules.ai_reasoning_engine import AIReasoningEngine
         self._services["ai_reasoning"] = AIReasoningEngine(
             ollama_client=self.get("ollama_client"))
+        from modules.architecture_auditor import ArchitectureAuditor
+        self._services["architecture_auditor"] = ArchitectureAuditor(
+            ollama_client=self.get("ollama_client"))
         from modules.report_generator import ReportGenerator
         self._services["report_generator"] = ReportGenerator()
         from modules.knowledge_base_engine import KnowledgeBaseEngine

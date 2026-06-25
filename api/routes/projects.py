@@ -35,6 +35,8 @@ async def create_project(project: ProjectCreate):
 @router.post("/scan")
 async def scan_project(path: str):
     """Scan a project directory"""
+    if not path or not path.strip():
+        raise HTTPException(status_code=400, detail="Path must not be empty")
     try:
         from core.di.container import container
         scanner = container.get("project_scanner")

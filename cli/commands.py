@@ -16,7 +16,7 @@ from core.models.project import Project
 console = Console()
 app = typer.Typer(help="PROJECT WARROOM - AI-Powered Project Defense Platform")
 
-logging.basicConfig(level=logging.INFO, handlers=[RichHandler(console=console, show_time=False)])
+logging.basicConfig(level=logging.WARNING, handlers=[RichHandler(console=console, show_time=False)])
 logger = logging.getLogger("warroom")
 
 
@@ -284,5 +284,10 @@ def show_version():
                         title="Version", border_style="green"))
 
 
-if __name__ == "__main__":
+def main():
+    """Entry point for console_scripts"""
     app()
+
+
+if __name__ == "__main__":
+    main()

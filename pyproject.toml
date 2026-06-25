@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=64.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "warroom"
+version = "0.1.0"
+description = "AI-Powered Project Defense Platform"
+requires-python = ">=3.12"
+dependencies = []
+
+[project.scripts]
+warroom = "cli.commands:main"
+
+[tool.setuptools.packages.find]
+include = ["cli*", "core*", "modules*", "ai*", "parsers*", "database*", "api*", "config*"]
+exclude = ["tests*", "data*", "output*", "reports*", "scanned_repos*", "warroom_projects*"]

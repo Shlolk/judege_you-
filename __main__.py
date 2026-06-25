@@ -11,6 +11,10 @@ import os
 # Ensure project root is in path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+# Force UTF-8 for Windows console (Rich uses Unicode chars)
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding="utf-8")
+
 from cli.commands import app
 
 if __name__ == "__main__":
