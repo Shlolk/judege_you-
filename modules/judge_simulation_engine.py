@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -346,8 +349,16 @@ class JudgeSimulationEngine:
                 f"Return: Score (0-10), Feedback, Key missing points"
             )
             
-            # Parse evaluation
-            score = random.uniform(4, 9)  # Simulated score
+            # Parse evaluation - extract score from response
+            score = 7.0  # default
+            import re
+            match = re.search(r'Score:\s*(\d+\.?\d*)', answer_eval, re.IGNORECASE)
+            if match:
+                score = min(10, max(0, float(match.group(1))))
+            if not match:
+                # Use difficulty-based simulated score as fallback
+                score = random.uniform(4, 9)
+            
             feedback = answer_eval[:200] if len(answer_eval) > 200 else answer_eval
             
             evaluation["answers"].append({
@@ -512,3 +523,4 @@ class JudgeSimulationEngine:
         ]
         
         return results
+

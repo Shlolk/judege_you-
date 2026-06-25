@@ -71,8 +71,10 @@ def analyze_project(project_name: str, format: str = "json", include: str = "all
     table.add_column("Status", style="yellow")
 
     for metric, score in scores.items():
-        status = "[green]Excellent[/green]" if score >= 80 else "[yellow]Good[/yellow]" if score >= 65 else "[red]Needs Work[/red]"
-        table.add_row(metric.replace("-", " ").title(), f"{score:.1f}%", status)
+        # Invert technical debt for display (higher debt = worse display score)
+        display_score = 100 - score if metric == "technical-debt" else score
+        status = "[green]Excellent[/green]" if display_score >= 80 else "[yellow]Good[/yellow]" if display_score >= 65 else "[red]Needs Work[/red]"
+        table.add_row(metric.replace("-", " ").title(), f"{display_score:.1f}%", status)
 
     avg = sum(scores.values()) / len(scores)
     table.add_row("[bold]Overall[/bold]", f"[bold]{avg:.1f}%[/bold]",

@@ -3,11 +3,9 @@
 from typing import Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
+import logging
 
-from modules.judge_simulation_engine import JudgeSimulationEngine, JudgePersona, AttackMode
-from modules.interview_simulation_engine import InterviewSimulationEngine, InterviewType, InterviewDifficulty
-from models.project import Project
-
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 class JudgeSimRequest(BaseModel):
@@ -30,96 +28,119 @@ class InterviewSimRequest(BaseModel):
 async def run_judge_simulation(request: JudgeSimRequest):
     """Run judge simulation"""
     try:
-        persona = JudgePersona(request.persona)
-        mode = AttackMode(request.mode)
-    except ValueError:
-        raise HTTPException(400, "Invalid persona or mode")
-    
-    project = Project.create(
-        name=request.project_name,
-        description=request.project_description,
-    )
-    
-    results = {
-        "project_id": request.project_id,
-        "persona": request.persona,
-        "mode": request.mode,
-        "questions_asked": request.num_questions,
-        "overall_score": 72.5,
-        "technical_score": 75.0,
-        "presentation_score": 68.0,
-        "defense_score": 70.0,
-        "innovation_score": 80.0,
-        "weak_spots_exposed": [
-            {"area": "scalability", "severity": "high", "question": "How does your system handle 1M users?"},
-            {"area": "security", "severity": "medium", "question": "How do you handle data privacy?"},
-        ],
-        "risk_areas": ["Scalability under load", "Security hardening needed", "Incomplete documentation"],
-        "final_verdict": "Strong project with good fundamentals. Address scalability and security concerns for higher scores.",
-        "improvement_suggestions": [
-            "Prepare scalability benchmarks",
-            "Document security architecture",
-            "Practice Q&A with technical depth",
-        ],
-    }
-    
-    return results
+        from core.di.container import container
+        from core.models.project import Project
+        from modules.judge_simulation_engine import JudgePersona, AttackMode
+
+        judge = container.get("judge_simulation")
+        if not judge:
+            raise HTTPException(status_code=503, detail="Judge simulation engine not available")
+
+        try:
+            persona = JudgePersona(request.persona)
+            mode = AttackMode(request.mode)
+        except ValueError:
+            raise HTTPException(400, f"Invalid persona '{request.persona}' or mode '{request.mode}'")
+
+        project = Project.create(name=request.project_name, description=request.project_description)
+        project.id = request.project_id
+
+        result = await judge.run_simulation(project, persona=persona, mode=mode, num_questions=request.num_questions)
+
+        return {
+            "project_id": request.project_id,
+            "persona": request.persona,
+            "mode": request.mode,
+            "overall_score": result.overall_score,
+            "technical_score": result.technical_score,
+            "presentation_score": result.presentation_score,
+            "defense_score": result.defense_score,
+            "innovation_score": result.innovation_score,
+            "weak_spots_exposed": result.weak_spots_exposed,
+            "risk_areas": result.risk_areas,
+            "final_verdict": result.final_verdict,
+            "improvement_suggestions": result.improvement_suggestions,
+            "questions_asked": [
+                {"question": q.question, "category": q.category, "difficulty": q.difficulty}
+                for q in result.questions_asked[:5]
+            ],
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("Judge simulation failed")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/interview")
 async def run_interview_simulation(request: InterviewSimRequest):
     """Run interview simulation"""
-    
-    results = {
-        "project_id": request.project_id,
-        "interview_type": request.interview_type,
-        "difficulty": request.difficulty,
-        "questions_asked": request.num_questions,
-        "overall_score": 68.0,
-        "technical_score": 72.0,
-        "communication_score": 65.0,
-        "problem_solving_score": 70.0,
-        "strengths_summary": [
-            "Good technical fundamentals",
-            "Clear communication style",
-            "Structured problem solving",
-        ],
-        "weaknesses_summary": [
-            "Needs more depth in system design",
-            "Could improve answer structure",
-        ],
-        "recommendations": [
-            "Practice system design with whiteboarding",
-            "Use STAR method for behavioral questions",
-            "Study distributed systems patterns",
-        ],
-        "readiness_level": "needs_practice",
-    }
-    
-    return results
+    try:
+        from core.di.container import container
+        from core.models.project import Project
+        from modules.interview_simulation_engine import InterviewType, InterviewDifficulty
+
+        interview = container.get("interview_simulation")
+        if not interview:
+            raise HTTPException(status_code=503, detail="Interview simulation engine not available")
+
+        try:
+            itype = InterviewType(request.interview_type)
+            diff = InterviewDifficulty(request.difficulty)
+        except ValueError:
+            raise HTTPException(400, f"Invalid interview type '{request.interview_type}' or difficulty '{request.difficulty}'")
+
+        project = Project.create(name=request.project_name, description=request.project_description)
+
+        result = await interview.run_interview(
+            project, interview_type=itype, difficulty=diff, num_questions=request.num_questions, simulate_candidate=True
+        )
+
+        return {
+            "project_id": request.project_id,
+            "interview_type": request.interview_type,
+            "difficulty": request.difficulty,
+            "overall_score": result.overall_score,
+            "technical_score": result.technical_score,
+            "communication_score": result.communication_score,
+            "problem_solving_score": result.problem_solving_score,
+            "strengths_summary": result.strengths_summary,
+            "weaknesses_summary": result.weaknesses_summary,
+            "recommendations": result.recommendations,
+            "readiness_level": result.readiness_level,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("Interview simulation failed")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/cross-examination")
 async def run_cross_examination(
-    project_id: str,
-    project_name: str,
-    project_description: str,
-    num_rounds: int = 5,
+    project_id: str, project_name: str, project_description: str, num_rounds: int = 5
 ):
     """Run cross-examination simulation"""
-    
-    return {
-        "project_id": project_id,
-        "rounds": num_rounds,
-        "overall_score": 65.0,
-        "rounds_data": [
-            {"round": i + 1, "area": area, "question": f"Tough question about {area}..."}
-            for i, area in enumerate(["architecture", "security", "scalability", "innovation", "business"])
-        ],
-        "critical_findings": [
-            "Inconsistent answers about system architecture",
-            "Unclear differentiation strategy",
-        ],
-        "recommendations": [
-            "Prepare consistent architecture narrative",
-            "Define clear competitive advantages",
-        ],
-    }
+    try:
+        from core.di.container import container
+        from core.models.project import Project
+
+        judge = container.get("judge_simulation")
+        if not judge:
+            raise HTTPException(status_code=503, detail="Judge simulation engine not available")
+
+        project = Project.create(name=project_name, description=project_description)
+
+        result = await judge.cross_examination(project, num_rounds=num_rounds)
+
+        return {
+            "project_id": project_id,
+            "rounds": num_rounds,
+            "overall_score": result["overall_score"],
+            "rounds_data": result["rounds"],
+            "critical_findings": result["critical_findings"],
+            "recommendations": result["recommendations"],
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("Cross-examination failed")
+        raise HTTPException(status_code=500, detail=str(e))

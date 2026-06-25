@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from typing import Dict, List, Any, Optional, Set, Tuple
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -687,3 +690,4 @@ class WeaknessDetectionEngine:
             return f"MODERATE: Project weaknesses are manageable but should be addressed in next sprint."
         else:
             return f"LOW: Project is in good shape with minor weaknesses detected."
+

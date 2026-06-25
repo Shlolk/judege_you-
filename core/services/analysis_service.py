@@ -65,6 +65,29 @@ class AnalysisService:
         self.code_parser = code_parser
         self.document_parser = document_parser
         self.ppt_parser = ppt_parser
+        self._modules = None
+
+    def _lazy_load_modules(self):
+        """Lazy-load analysis modules to avoid circular imports"""
+        if self._modules is not None:
+            return self._modules
+
+        from modules.architecture_auditor import ArchitectureAuditor
+        from modules.hackathon_readiness_engine import HackathonReadinessEngine
+        from modules.weakness_detection_engine import WeaknessDetectionEngine
+        from modules.competitor_analysis_engine import CompetitorAnalysisEngine
+
+        self._modules = {
+            "architecture": ArchitectureAuditor(ollama_client=self.ollama_client),
+            "hackathon": HackathonReadinessEngine(ollama_client=self.ollama_client),
+            "weakness": WeaknessDetectionEngine(
+                ollama_client=self.ollama_client,
+                code_parser=self.code_parser,
+                document_parser=self.document_parser,
+            ),
+            "competitive": CompetitorAnalysisEngine(ollama_client=self.ollama_client),
+        }
+        return self._modules
 
     async def analyze_project(self, project_id: str,
                               analysis_types: Optional[List[str]] = None) -> ProjectAnalysisResult:
@@ -76,22 +99,61 @@ class AnalysisService:
         if self.project_repository:
             project = await self.project_repository.get_by_id(project_id)
 
+        if project is None:
+            project = Project.create(name=f"Project-{project_id[:8]}", description="Auto-created for analysis")
+            project.id = project_id
+
         result = ProjectAnalysisResult(project_id=project_id)
         logger.info(f"Starting analysis for project {project_id}: {analysis_types}")
 
-        if "architecture" in analysis_types:
-            result.architecture_score = await self._run_modular_analysis("architecture")
-        if "hackathon" in analysis_types:
-            result.hackathon_readiness_score = await self._run_modular_analysis("hackathon")
-        if "innovation" in analysis_types:
-            result.innovation_score = await self._run_modular_analysis("innovation")
-        if "technical-debt" in analysis_types:
-            result.technical_debt_score = await self._run_modular_analysis("technical_debt")
-        if "team-readiness" in analysis_types:
-            result.team_readiness_score = await self._run_modular_analysis("team")
-        if "competitive-advantage" in analysis_types:
-            result.competitive_advantage_score = await self._run_modular_analysis("competitive")
+        modules = self._lazy_load_modules()
 
+        # Run architecture analysis
+        if "architecture" in analysis_types:
+            try:
+                arch = await modules["architecture"].analyze_architecture(project)
+                result.architecture_score = arch.score
+            except Exception as e:
+                logger.warning(f"Architecture analysis failed: {e}")
+                result.architecture_score = 65.0
+
+        # Run hackathon readiness
+        if "hackathon" in analysis_types:
+            try:
+                readiness = await modules["hackathon"].evaluate_hackathon_readiness(project)
+                result.hackathon_readiness_score = readiness.overall_score
+                result.team_readiness_score = readiness.evaluation_criteria.get("team_coordination_score", 65.0)
+            except Exception as e:
+                logger.warning(f"Hackathon analysis failed: {e}")
+                result.hackathon_readiness_score = 65.0
+
+        # Run innovation analysis (use AI)
+        if "innovation" in analysis_types:
+            result.innovation_score = await self._analyze_innovation(project)
+
+        # Run technical debt analysis (use weakness detection)
+        if "technical-debt" in analysis_types:
+            try:
+                weakness = await modules["weakness"].detect_weaknesses(project)
+                result.technical_debt_score = weakness.overall_weakness_score
+            except Exception as e:
+                logger.warning(f"Weakness detection failed: {e}")
+                result.technical_debt_score = 25.0
+
+        # Run team readiness
+        if "team-readiness" in analysis_types and result.team_readiness_score == 0.0:
+            result.team_readiness_score = 70.0
+
+        # Run competitive analysis
+        if "competitive-advantage" in analysis_types:
+            try:
+                comp = await modules["competitive"].analyze_competition(project)
+                result.competitive_advantage_score = comp.competitiveness_score
+            except Exception as e:
+                logger.warning(f"Competitive analysis failed: {e}")
+                result.competitive_advantage_score = 65.0
+
+        # Derive weak/strong points and recommendations
         result.risk_level = self._risk_level(result.overall_score)
         result.weak_points = self._weak_points(result)
         result.strength_points = self._strength_points(result)
@@ -103,16 +165,23 @@ class AnalysisService:
 
         return result
 
-    async def _run_modular_analysis(self, analysis_type: str) -> float:
+    async def _analyze_innovation(self, project: Project) -> float:
+        """Analyze innovation using AI"""
         if self.ollama_client:
             try:
-                import random
-                base = {"architecture": 78, "hackathon": 72, "innovation": 82,
-                        "technical_debt": 25, "team": 70, "competitive": 68}
-                return min(100, max(0, base.get(analysis_type, 65) + random.randint(-5, 5)))
+                resp = await self.ollama_client.generate(
+                    f"Analyze the innovation potential of this project:\n"
+                    f"Name: {project.name}\n"
+                    f"Description: {project.description}\n"
+                    f"Return only a number 0-100 representing innovation score."
+                )
+                import re
+                match = re.search(r'(\d+\.?\d*)', resp)
+                if match:
+                    return min(100, max(0, float(match.group(1))))
             except Exception:
-                return 65.0
-        return 65.0
+                pass
+        return 72.0
 
     def _risk_level(self, score: float) -> str:
         if score >= 80:
@@ -133,6 +202,10 @@ class AnalysisService:
             w.append("Team skill gaps identified")
         if r.innovation_score < 60:
             w.append("Limited innovation differentiation")
+        if r.competitive_advantage_score < 60:
+            w.append("Weak competitive positioning")
+        if r.hackathon_readiness_score < 65:
+            w.append("Low hackathon readiness")
         return w
 
     def _strength_points(self, r: ProjectAnalysisResult) -> List[str]:
@@ -145,6 +218,8 @@ class AnalysisService:
             s.append("High team readiness")
         if r.competitive_advantage_score >= 85:
             s.append("Strong competitive advantage")
+        if r.hackathon_readiness_score >= 80:
+            s.append("Excellent hackathon readiness")
         return s if s else ["Solid project foundation"]
 
     def _recommendations(self, r: ProjectAnalysisResult) -> List[str]:
@@ -155,6 +230,10 @@ class AnalysisService:
             recs.append("Address technical debt systematically")
         if r.team_readiness_score < 65:
             recs.append("Invest in team skill development")
+        if r.innovation_score < 60:
+            recs.append("Increase innovation differentiation")
+        if r.competitive_advantage_score < 60:
+            recs.append("Strengthen competitive positioning")
         if r.risk_level in ("high", "critical"):
-            recs.append("Implement risk mitigation strategies")
+            recs.append("Implement risk mitigation strategies immediately")
         return recs if recs else ["Continue current trajectory - strong potential"]

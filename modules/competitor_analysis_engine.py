@@ -1,8 +1,12 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 import re
+import random
 
 from core.models.project import Project
 from ai.models.ollama_client import OllamaClient
@@ -675,3 +679,6 @@ class CompetitorAnalysisEngine:
                 recommendations.append(f"Address market gap: {gap}")
         
         return recommendations[:8]
+
+
+import random

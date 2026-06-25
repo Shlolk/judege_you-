@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -414,3 +417,4 @@ class ProjectScanner:
                 return f"{size_bytes:.1f} {unit}"
             size_bytes /= 1024
         return f"{size_bytes:.1f} PB"
+

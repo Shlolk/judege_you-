@@ -36,7 +36,9 @@ class ArchitectureAuditor:
             "maintainability_rating (0-100), innovation_rating (0-100)")
 
         if analysis and "score" in analysis:
-            return ArchitectureAnalysis(**analysis)
+            valid_keys = {f.name for f in __import__("dataclasses").fields(ArchitectureAnalysis)}
+            filtered = {k: v for k, v in analysis.items() if k in valid_keys}
+            return ArchitectureAnalysis(**filtered)
         return self._fallback()
 
     def _fallback(self) -> ArchitectureAnalysis:

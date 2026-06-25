@@ -1,23 +1,22 @@
+# Environment
+.env
+.env.local
+.env.*.local
+
 # Python
 __pycache__/
 *.py[cod]
-*$py.class
-*.so
-*.egg
 *.egg-info/
 dist/
 build/
-*.whl
-
-# Environment
-.env
+*.egg
 .venv/
 venv/
 env/
 
 # IDE
-.idea/
 .vscode/
+.idea/
 *.swp
 *.swo
 *~
@@ -26,10 +25,17 @@ env/
 .DS_Store
 Thumbs.db
 
-# Project specific
-output/
+# Project data
 data/
+output/
+warroom_projects/
+scanned_repos/
+
+# Logs
 *.log
+logs/
+
+# Testing
 .coverage
 htmlcov/
 .pytest_cache/

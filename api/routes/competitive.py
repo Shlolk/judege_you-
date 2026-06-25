@@ -1,11 +1,11 @@
 """Competitive intelligence API routes"""
 
 from typing import Optional
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
+import logging
 
-from modules.competitor_analysis_engine import CompetitorAnalysisEngine, MarketSegment
-
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 class CompetitiveAnalysisRequest(BaseModel):
@@ -16,51 +16,40 @@ class CompetitiveAnalysisRequest(BaseModel):
 @router.post("/analyze")
 async def analyze_competition(request: CompetitiveAnalysisRequest):
     """Analyze competitive landscape"""
-    
-    results = {
-        "project_name": request.project_name,
-        "overall_position": "niche",
-        "competitiveness_score": 72.0,
-        "market_fit_score": 68.0,
-        "differentiation_score": 85.0,
-        "direct_competitors": [
-            {
-                "name": "GitHub Copilot",
-                "strengths": ["Code completion", "IDE integration"],
-                "weaknesses": ["No project analysis", "No simulation"],
-                "threat_level": "medium",
-                "similarity": 35.0,
-            },
-            {
-                "name": "SonarQube",
-                "strengths": ["Static analysis", "Technical debt measurement"],
-                "weaknesses": ["No AI", "No hackathon features"],
-                "threat_level": "medium",
-                "similarity": 45.0,
-            },
-            {
-                "name": "Devpost",
-                "strengths": ["Hackathon hosting", "Community"],
-                "weaknesses": ["No AI analysis", "No training"],
-                "threat_level": "low",
-                "similarity": 30.0,
-            },
-        ],
-        "blue_ocean_opportunities": [
-            "No competitor offers judge simulation for hackathons",
-            "No competitor combines code analysis + team readiness + defense training",
-            "No competitor provides cross-examination mode for project defense",
-        ],
-        "competitive_advantages": [
-            "Comprehensive project analysis across multiple dimensions",
-            "Judge and interview simulation for defense preparation",
-            "AI-powered hackathon readiness engine with winning probability",
-        ],
-        "strategic_recommendations": [
-            "Focus on unique judge simulation feature for differentiation",
-            "Target hackathon participants as initial market segment",
-            "Build community around project defense training",
-        ],
-    }
-    
-    return results
+    try:
+        from core.di.container import container
+        from core.models.project import Project
+
+        competitor = container.get("competitor_analysis")
+        if not competitor:
+            raise HTTPException(status_code=503, detail="Competitor analysis engine not available")
+
+        project = Project.create(name=request.project_name, description=request.project_description)
+        result = await competitor.analyze_competition(project)
+
+        return {
+            "project_name": request.project_name,
+            "overall_position": result.overall_position,
+            "competitiveness_score": result.competitiveness_score,
+            "market_fit_score": result.market_fit_score,
+            "differentiation_score": result.differentiation_score,
+            "direct_competitors": [
+                {
+                    "name": c.name,
+                    "strengths": c.strengths[:3],
+                    "weaknesses": c.weaknesses[:3],
+                    "threat_level": c.threat_level,
+                    "similarity": c.similarity_score,
+                }
+                for c in result.direct_competitors[:5]
+            ],
+            "blue_ocean_opportunities": result.blue_ocean_opportunities[:5],
+            "competitive_advantages": result.competitive_advantages[:5],
+            "competitive_disadvantages": result.competitive_disadvantages[:3],
+            "strategic_recommendations": result.strategic_recommendations[:8],
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("Competitive analysis failed")
+        raise HTTPException(status_code=500, detail=str(e))

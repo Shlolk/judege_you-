@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -410,3 +413,4 @@ class KnowledgeBaseEngine:
                 default=datetime.now()
             ).isoformat(),
         }
+

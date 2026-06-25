@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass
 from datetime import datetime
@@ -579,3 +582,4 @@ class AIReasoningEngine:
             risk_level=d.get("risk_level", "medium"),
             implementation_steps=d.get("implementation_steps", ["Investigate further"]),
         )
+
