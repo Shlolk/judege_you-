@@ -47,7 +47,7 @@ class ProjectRepository:
                 logger.info(f"[Mock] Saved project {project.id}: {project.name}")
                 return
             model = self._from_domain(project)
-            session.add(model)
+            await session.merge(model)
 
     async def update(self, project: Project) -> None:
         async with db_config.session(self.db_session) as session:
@@ -64,7 +64,7 @@ class ProjectRepository:
                     analysis_score=project.analysis_score,
                     health_score=project.health_score,
                     metadata_json=project.metadata,
-                    updated_at=datetime.utcnow(),
+                    updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
                 )
             )
 

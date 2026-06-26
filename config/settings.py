@@ -2,11 +2,12 @@ from pydantic_settings import BaseSettings
 from typing import List
 from pathlib import Path
 
+
 class Settings(BaseSettings):
     project_name: str = "PROJECT WARROOM"
     version: str = "0.1.0"
     environment: str = "development"
-    debug: bool = True
+    debug: bool = False
 
     database_url: str = "postgresql+asyncpg://warroom:warroom_secret_2024@localhost:5432/warroom"
     redis_url: str = "redis://localhost:6379/0"
@@ -44,5 +45,6 @@ class Settings(BaseSettings):
 
     def get_doc_extensions(self) -> List[str]:
         return self.supported_doc_extensions.split(",")
+
 
 settings = Settings()

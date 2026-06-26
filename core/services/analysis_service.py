@@ -45,7 +45,8 @@ class ProjectAnalysisResult:
             self.team_composition = {}
         if self.created_at is None:
             self.created_at = datetime.now()
-        self.overall_score = self._calculate_overall()
+        if self.overall_score == 0.0:
+            self.overall_score = self._calculate_overall()
 
     def _calculate_overall(self) -> float:
         scores = [self.architecture_score, self.innovation_score,
@@ -53,11 +54,16 @@ class ProjectAnalysisResult:
                   self.team_readiness_score, self.competitive_advantage_score]
         return sum(scores) / len(scores) if scores else 0.0
 
+    def recalculate(self):
+        self.overall_score = self._calculate_overall()
+
 
 class AnalysisService:
     def __init__(self, project_repository=None, analysis_repository=None,
                  ollama_client=None, embedding_service=None,
-                 code_parser=None, document_parser=None, ppt_parser=None):
+                 code_parser=None, document_parser=None, ppt_parser=None,
+                 architecture_auditor=None, hackathon_engine=None,
+                 weakness_engine=None, competitor_engine=None):
         self.project_repository = project_repository
         self.analysis_repository = analysis_repository
         self.ollama_client = ollama_client
@@ -65,29 +71,12 @@ class AnalysisService:
         self.code_parser = code_parser
         self.document_parser = document_parser
         self.ppt_parser = ppt_parser
-        self._modules = None
-
-    def _lazy_load_modules(self):
-        """Lazy-load analysis modules to avoid circular imports"""
-        if self._modules is not None:
-            return self._modules
-
-        from modules.architecture_auditor import ArchitectureAuditor
-        from modules.hackathon_readiness_engine import HackathonReadinessEngine
-        from modules.weakness_detection_engine import WeaknessDetectionEngine
-        from modules.competitor_analysis_engine import CompetitorAnalysisEngine
-
         self._modules = {
-            "architecture": ArchitectureAuditor(ollama_client=self.ollama_client),
-            "hackathon": HackathonReadinessEngine(ollama_client=self.ollama_client),
-            "weakness": WeaknessDetectionEngine(
-                ollama_client=self.ollama_client,
-                code_parser=self.code_parser,
-                document_parser=self.document_parser,
-            ),
-            "competitive": CompetitorAnalysisEngine(ollama_client=self.ollama_client),
+            "architecture": architecture_auditor,
+            "hackathon": hackathon_engine,
+            "weakness": weakness_engine,
+            "competitive": competitor_engine,
         }
-        return self._modules
 
     async def analyze_project(self, project_id: str,
                               analysis_types: Optional[List[str]] = None) -> ProjectAnalysisResult:
@@ -106,12 +95,13 @@ class AnalysisService:
         result = ProjectAnalysisResult(project_id=project_id)
         logger.info(f"Starting analysis for project {project_id}: {analysis_types}")
 
-        modules = self._lazy_load_modules()
-
         # Run architecture analysis
         if "architecture" in analysis_types:
             try:
-                arch = await modules["architecture"].analyze_architecture(project)
+                arch_mod = self._modules.get("architecture")
+                if not arch_mod:
+                    raise RuntimeError("Architecture auditor not available")
+                arch = await arch_mod.analyze_architecture(project)
                 result.architecture_score = arch.score
             except Exception as e:
                 logger.warning(f"Architecture analysis failed: {e}")
@@ -120,7 +110,10 @@ class AnalysisService:
         # Run hackathon readiness
         if "hackathon" in analysis_types:
             try:
-                readiness = await modules["hackathon"].evaluate_hackathon_readiness(project)
+                hack_mod = self._modules.get("hackathon")
+                if not hack_mod:
+                    raise RuntimeError("Hackathon engine not available")
+                readiness = await hack_mod.evaluate_hackathon_readiness(project)
                 result.hackathon_readiness_score = readiness.overall_score
                 result.team_readiness_score = readiness.evaluation_criteria.get("team_coordination_score", 65.0)
             except Exception as e:
@@ -129,12 +122,19 @@ class AnalysisService:
 
         # Run innovation analysis (use AI)
         if "innovation" in analysis_types:
-            result.innovation_score = await self._analyze_innovation(project)
+            try:
+                result.innovation_score = await self._analyze_innovation(project)
+            except Exception as e:
+                logger.warning(f"Innovation analysis failed: {e}")
+                result.innovation_score = 65.0
 
         # Run technical debt analysis (use weakness detection)
         if "technical-debt" in analysis_types:
             try:
-                weakness = await modules["weakness"].detect_weaknesses(project)
+                weak_mod = self._modules.get("weakness")
+                if not weak_mod:
+                    raise RuntimeError("Weakness detection not available")
+                weakness = await weak_mod.detect_weaknesses(project)
                 result.technical_debt_score = weakness.overall_weakness_score
             except Exception as e:
                 logger.warning(f"Weakness detection failed: {e}")
@@ -147,13 +147,17 @@ class AnalysisService:
         # Run competitive analysis
         if "competitive-advantage" in analysis_types:
             try:
-                comp = await modules["competitive"].analyze_competition(project)
+                comp_mod = self._modules.get("competitive")
+                if not comp_mod:
+                    raise RuntimeError("Competitive analysis not available")
+                comp = await comp_mod.analyze_competition(project)
                 result.competitive_advantage_score = comp.competitiveness_score
             except Exception as e:
                 logger.warning(f"Competitive analysis failed: {e}")
                 result.competitive_advantage_score = 65.0
 
-        # Derive weak/strong points and recommendations
+        # Recalculate overall score and derive weak/strong points
+        result.recalculate()
         result.risk_level = self._risk_level(result.overall_score)
         result.weak_points = self._weak_points(result)
         result.strength_points = self._strength_points(result)

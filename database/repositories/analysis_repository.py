@@ -37,7 +37,7 @@ class AnalysisRepository:
                 logger.info(f"[Mock] Saved analysis for project {project_id}: {analysis_result.analysis_type} = {analysis_result.score}")
                 return
             model = self._from_domain(project_id, analysis_result)
-            session.add(model)
+            await session.merge(model)
 
     async def get_latest(self, project_id: str, analysis_type: str = None) -> Optional[AnalysisResult]:
         async with db_config.session(self.db_session) as session:

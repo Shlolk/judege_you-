@@ -236,11 +236,23 @@ class JudgeSimulationEngine:
         scenarios = []
         categories = ["architecture", "business", "technical", "innovation", "team", "defense"]
         
+        placeholders = {
+            "n": str(random.randint(1000, 100000)),
+            "component": random.choice(["database", "API gateway", "auth service", "message queue", "cache layer"]),
+            "technology": random.choice(["Python", "FastAPI", "PostgreSQL", "Redis", "Docker", "Kubernetes"]),
+            "alternative": random.choice(["Node.js", "Go", "MongoDB", "RabbitMQ", "serverless", "monolith"]),
+            "competitor": random.choice(["existing solutions", "traditional approaches", "big tech alternatives", "open-source tools"]),
+            "module": random.choice(["payment processing", "user auth", "data pipeline", "notification system", "search engine"]),
+            "feature": random.choice(["AI recommendation", "real-time sync", "auto-scaling", "data analytics", "collaboration"]),
+            "critical_function": random.choice(["deployment pipeline", "data migration", "security audit", "performance tuning", "backup strategy"]),
+        }
+        
         for category in categories:
             if category in self.attack_templates:
                 template = random.choice(self.attack_templates[category])
+                filled = template.format(**placeholders)
                 question = JudgeQuestion(
-                    question=template,
+                    question=filled,
                     category=category,
                     difficulty=random.randint(3, 9),
                     expected_answer_points=[],

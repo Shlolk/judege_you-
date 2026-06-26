@@ -68,6 +68,10 @@ class KnowledgeBaseEngine:
                 with open(kb_file, "r", encoding="utf-8") as f:
                     data = json.load(f)
                     for entry_data in data:
+                        if isinstance(entry_data.get("created_at"), str):
+                            entry_data["created_at"] = datetime.fromisoformat(entry_data["created_at"])
+                        if isinstance(entry_data.get("last_accessed"), str):
+                            entry_data["last_accessed"] = datetime.fromisoformat(entry_data["last_accessed"])
                         entry = KnowledgeEntry(**entry_data)
                         self.entries[entry.id] = entry
             except:

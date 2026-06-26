@@ -679,6 +679,3 @@ class CompetitorAnalysisEngine:
                 recommendations.append(f"Address market gap: {gap}")
         
         return recommendations[:8]
-
-
-import random

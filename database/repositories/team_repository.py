@@ -71,7 +71,14 @@ class TeamRepository:
             )
 
     async def delete(self, team_id: str) -> None:
-        logger.info(f"[Mock] Deleted team {team_id}")
+        async with db_config.session(self.db_session) as session:
+            if session is None:
+                logger.info(f"[Mock] Deleted team {team_id}")
+                return
+            from sqlalchemy import delete as sa_delete
+            await session.execute(
+                sa_delete(TeamMemberModel).where(TeamMemberModel.id == team_id)
+            )
 
     async def get_member_count(self, project_id: str) -> int:
         async with db_config.session(self.db_session) as session:

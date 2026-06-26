@@ -215,7 +215,7 @@ class ProjectScanner:
             for f in files_set
         )
         has_ci = any(
-            ".github" in f.path or ".gitlab-ci.yml" in f.path or "Jenkinsfile" in f.name
+            f.path.startswith(".github") or f.path == ".gitlab-ci.yml" or "Jenkinsfile" in f.name
             for f in all_files
         )
         

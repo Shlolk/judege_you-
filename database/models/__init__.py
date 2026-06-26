@@ -2,7 +2,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy import Column, String, Float, Integer, DateTime, Text, JSON, Boolean, ForeignKey, Enum as SAEnum
 from sqlalchemy.orm import relationship, declared_attr
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid
 import enum
 
@@ -12,8 +12,9 @@ def generate_uuid():
     return str(uuid.uuid4())
 
 class TimestampMixin:
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), nullable=False)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None),
+                        onupdate=lambda: datetime.now(timezone.utc).replace(tzinfo=None), nullable=True)
 
 class ProjectStatus(str, enum.Enum):
     ACTIVE = "active"
@@ -132,7 +133,7 @@ class CompetitorIntelligenceModel(Base, TimestampMixin):
     strengths = Column(JSON, nullable=True)
     weaknesses = Column(JSON, nullable=True)
     metadata_json = Column(JSON, nullable=True)
-    last_updated = Column(DateTime, default=datetime.utcnow, nullable=True)
+    last_updated = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), nullable=True)
 
 class StrategyPlanModel(Base, TimestampMixin):
     __tablename__ = "strategy_plans"

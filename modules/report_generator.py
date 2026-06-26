@@ -266,10 +266,10 @@ class ReportGenerator:
         
         # Score circle
         drawing = Drawing(200, 200)
-        drawing.add(Circle(100, 100, 80))
-        drawing.add(String(100, 100, f"{overall:.0f}", fontSize=36, textAnchor="middle"))
-        
         score_color = HexColor("#1b5e20") if overall >= 70 else HexColor("#e65100") if overall >= 50 else HexColor("#b71c1c")
+        drawing.add(Circle(100, 100, 80, fillColor=score_color, strokeColor=score_color))
+        drawing.add(String(100, 100, f"{overall:.0f}", fontSize=36, textAnchor="middle", fillColor=white, fontName="Helvetica-Bold"))
+        story.append(drawing)
         
         story.append(Paragraph(f"Overall Score: {overall:.1f}%", self.styles["WarroomScore"]))
         

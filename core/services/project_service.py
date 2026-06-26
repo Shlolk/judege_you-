@@ -1,4 +1,5 @@
 import logging
+from collections import Counter
 from typing import Dict, List, Any, Optional
 from uuid import uuid4
 from datetime import datetime
@@ -66,7 +67,6 @@ class ProjectService:
         return team
 
     async def get_team_readiness(self, project_id: str) -> Dict[str, Any]:
-        from collections import Counter
         if not self.team_repository:
             return {"overall_readiness": 50.0, "error": "Team repository not available"}
 
