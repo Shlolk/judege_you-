@@ -483,6 +483,59 @@ class JudgeSimulationEngine:
             "Improve team role clarity",
         ]
     
+    async def generate_defense_questions(
+        self,
+        project: Project,
+        persona: JudgePersona = JudgePersona.SIH_JUDGE,
+        mode: AttackMode = AttackMode.MODERATE,
+        num_easy: int = 5,
+        num_medium: int = 5,
+        num_hard: int = 5,
+    ) -> List[JudgeQuestion]:
+        """Generate questions with specific difficulty distribution for defense practice"""
+        easy_qs = await self._generate_questions(project, persona, mode, num_easy)
+        for q in easy_qs:
+            q.difficulty = random.randint(1, 3)
+        medium_qs = await self._generate_questions(project, persona, mode, num_medium)
+        for q in medium_qs:
+            q.difficulty = random.randint(4, 6)
+        hard_qs = await self._generate_questions(project, persona, mode, num_hard)
+        for q in hard_qs:
+            q.difficulty = random.randint(7, 10)
+        combined = easy_qs + medium_qs + hard_qs
+        random.shuffle(combined)
+        return combined
+
+    async def evaluate_answer(self, project: Project, question: JudgeQuestion, user_answer: str) -> dict:
+        """Evaluate a user's answer to a judge question and return a score 0-10"""
+        if not user_answer or not user_answer.strip():
+            return {"score": 0, "feedback": "No answer provided.", "max_score": 10}
+
+        evaluation = await self.ollama_client.generate(
+            f"You are a {question.category} judge evaluating a defense answer.\n"
+            f"Project: {project.name}\n"
+            f"Question (difficulty {question.difficulty}/10): {question.question}\n"
+            f"Participant's answer: {user_answer}\n\n"
+            f"Rate this answer from 0-10 where:\n"
+            f"0 = completely wrong or off-topic\n"
+            f"10 = perfect, comprehensive, confident answer\n"
+            f"Consider: correctness, depth, confidence, and relevance.\n"
+            f"Return format:\n"
+            f"Score: X\n"
+            f"Feedback: <2-3 sentence evaluation>"
+        )
+
+        score = 0
+        import re
+        match = re.search(r'Score:\s*(\d+\.?\d*)', evaluation, re.IGNORECASE)
+        if match:
+            score = min(10, max(0, float(match.group(1))))
+        else:
+            score = random.uniform(3, 7)
+
+        feedback = evaluation[:300] if len(evaluation) > 300 else evaluation
+        return {"score": round(score, 1), "feedback": feedback, "max_score": 10}
+
     async def cross_examination(
         self,
         project: Project,

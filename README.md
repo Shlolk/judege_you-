@@ -93,46 +93,104 @@ While ChatGPT answers questions, PROJECT WARROOM **attacks your project** — di
 
 ## Quick Start
 
-### Prerequisites
+### One-Line Install (Windows)
 
-- Python 3.12+
-- Docker & Docker Compose (for services)
-- Ollama (for AI features)
+```batch
+git clone https://github.com/Shlolk/judge_you-.git
+cd judge_you-
+pip install -r requirements.txt
+echo @echo off
+echo python "%~dp0__main__.py" %%* > "%USERPROFILE%\AppData\Local\Programs\Python\Python313\Scripts\warroom.cmd"
+warroom version
+```
 
-### Installation
+### One-Line Install (Linux/Mac)
 
 ```bash
-# Clone the repository
-git clone https://github.com/Shlolk/judege_you-.git
-cd project-warroom
+git clone https://github.com/Shlolk/judge_you-.git
+cd judge_you-
+pip install -r requirements.txt
+echo 'python3 "$(pwd)/__main__.py" "$@"' | sudo tee /usr/local/bin/warroom > /dev/null
+sudo chmod +x /usr/local/bin/warroom
+warroom version
+```
 
-# Install dependencies
+### Manual Installation
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/Shlolk/judege_you-.git
+cd judge_you-
+
+# 2. Install dependencies
 pip install -r requirements.txt
 
-# Start infrastructure services
-docker-compose up -d postgres redis chromadb
+# 3. Use directly (no install needed)
+python __main__.py --help
 
-# Pull AI model
+# 4. (Optional) Create a global `warroom` command
+#    Windows: create a .cmd file in your PATH pointing to __main__.py
+#    Linux/Mac: alias warroom='python3 /path/to/__main__.py'
+```
+
+### Run Without Installing
+
+```bash
+# Just clone, pip install, and run:
+python __main__.py scan "C:\MyProject"
+python __main__.py analyze MyProject
+python __main__.py judge MyProject
+python __main__.py version
+```
+
+### Optional Dependencies
+
+All features work without these — they fall back to mock data:
+
+```bash
+# For full AI features (optional):
+docker-compose up -d postgres redis
 ollama pull gemma3:latest
 ```
 
 ### CLI Usage
 
 ```bash
+# Interactive shell (just type warroom)
+warroom
+
 # Initialize a project
-python -m cli.commands init my-project --repo https://github.com/user/repo
+warroom init my-project
 
-# Run comprehensive analysis
-python -m cli.commands analyze my-project --format json
+# Scan any directory
+warroom scan /path/to/project
 
-# Run judge simulation
-python -m cli.commands judge my-project --mode full-audit
+# Run comprehensive analysis (6 metrics)
+warroom analyze my-project
 
-# Check team readiness
-python -m cli.commands readiness my-project --evaluate-team
+# Interactive defense practice (15 questions)
+warroom judge my-project
 
-# Start dashboard
-python -m cli.commands dashboard my-project --port 8080
+# Old AI-only judge simulation
+warroom judge my-project --simulate
+
+# Competitive intelligence
+warroom competitive my-project
+
+# Generate a professional PDF report
+warroom report my-project
+
+# Brutal project roast 🔥
+warroom roast /path/to/project
+
+# Tracked projects dashboard
+warroom status
+
+# Manage preferences
+warroom config list
+
+# JSON output (for scripting)
+warroom --json status
 ```
 
 ### API Usage
